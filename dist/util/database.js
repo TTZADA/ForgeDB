@@ -203,4 +203,5 @@ class DataBase extends databaseManager_1.DataBaseManager {
     static wipeCaches() { internalCache.clear(); }
     static getCacheSize() { return internalCache.size; }
 }
+DataBase._cacheDatabaseVariables = false;
 exports.DataBase = DataBase;
