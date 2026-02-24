@@ -200,8 +200,16 @@ class DataBase extends databaseManager_1.DataBaseManager {
             if (entry) internalCache.set(key, { value: entry.value });
         }
     }
+    
+    static getCacheEntries() {
+    return internalCache.entries();
+   }
+
+    static getCacheEntry(key) {
+    return internalCache.get(key);
+  }
+  
     static wipeCaches() { internalCache.clear(); }
     static getCacheSize() { return internalCache.size; }
 }
-DataBase._cacheDatabaseVariables = false;
 exports.DataBase = DataBase;
