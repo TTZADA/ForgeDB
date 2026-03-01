@@ -39,40 +39,26 @@ class DataBase extends databaseManager_1.DataBaseManager {
     }
     static async set(data) {
         const newData = new this.entities.Record();
-        newData.identifier = this.make_intetifier(data);
-        newData.name = data.name;
-        newData.id = data.id;
-        newData.type = data.type;
-        newData.value = data.value;
-        if (["member", "channel", "role"].includes(data.type)) newData.guildId = data.guildId;
-        internalCache.set(newData.identifier, { value: newData.value });
-        const oldData = await this.db.getRepository(this.entities.Record).findOneBy({ identifier: this.make_intetifier(data) });
-        if (oldData && this.type === "mongodb") {
-            this.emitter.emit("variableUpdate", { newData, oldData });
-            await this.db.getRepository(this.entities.Record).update({ identifier: oldData.identifier }, newData);
-        } else {
-            oldData
-                ? this.emitter.emit("variableUpdate", { newData, oldData })
-                : this.emitter.emit("variableCreate", { data: newData });
-            await this.db.getRepository(this.entities.Record).save(newData);
-        }
+    newData.identifier = this.make_intetifier(data);
+    newData.name = data.name;
+    newData.id = data.id;
+    newData.type = data.type;
+    newData.value = data.value;
+    if (["member", "channel", "role"].includes(data.type)) newData.guildId = data.guildId;
+    const oldData = await this.db.getRepository(this.entities.Record).findOneBy({ identifier: this.make_intetifier(data) });
+    if (oldData && this.type === "mongodb") {
+        this.emitter.emit("variableUpdate", { newData, oldData });
+        await this.db.getRepository(this.entities.Record).update({ identifier: oldData.identifier }, newData);
+    } else {
+        oldData
+            ? this.emitter.emit("variableUpdate", { newData, oldData })
+            : this.emitter.emit("variableCreate", { data: newData });
+        await this.db.getRepository(this.entities.Record).save(newData);
+      }
     }
     static async get(data) {
-        const identifier = data.identifier ?? this.make_intetifier(data);
-        const cached = internalCache.get(identifier);
-        if (cached) {
-            if (!cached.expiresAt || cached.expiresAt > Date.now()) {
-                const record = new this.entities.Record();
-                record.identifier = identifier;
-                record.value = cached.value;
-                return record;
-            } else {
-                internalCache.delete(identifier);
-            }
-        }
-        const result = await this.db.getRepository(this.entities.Record).findOneBy({ identifier });
-        if (result) internalCache.set(identifier, { value: result.value });
-        return result;
+      const identifier = data.identifier ?? this.make_intetifier(data);
+      return await this.db.getRepository(this.entities.Record).findOneBy({ identifier });
     }
     static async getAll() {
         return await this.db.getRepository(this.entities.Record).find();
