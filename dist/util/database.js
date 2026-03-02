@@ -45,6 +45,7 @@ class DataBase extends databaseManager_1.DataBaseManager {
         newData.type = data.type;
         newData.value = data.value;
         if (["member", "channel", "role"].includes(data.type)) newData.guildId = data.guildId;
+        internalCache.set(newData.identifier, { value: newData.value });
         const oldData = await this.db.getRepository(this.entities.Record).findOneBy({ identifier: this.make_intetifier(data) });
         if (oldData && this.type === "mongodb") {
             this.emitter.emit("variableUpdate", { newData, oldData });
@@ -58,7 +59,20 @@ class DataBase extends databaseManager_1.DataBaseManager {
     }
     static async get(data) {
         const identifier = data.identifier ?? this.make_intetifier(data);
-        return await this.db.getRepository(this.entities.Record).findOneBy({ identifier });
+        const cached = internalCache.get(identifier);
+        if (cached) {
+            if (!cached.expiresAt || cached.expiresAt > Date.now()) {
+                const record = new this.entities.Record();
+                record.identifier = identifier;
+                record.value = cached.value;
+                return record;
+            } else {
+                internalCache.delete(identifier);
+            }
+        }
+        const result = await this.db.getRepository(this.entities.Record).findOneBy({ identifier });
+        if (result) internalCache.set(identifier, { value: result.value });
+        return result;
     }
     static async getAll() {
         return await this.db.getRepository(this.entities.Record).find();
@@ -186,12 +200,15 @@ class DataBase extends databaseManager_1.DataBaseManager {
             if (entry) internalCache.set(key, { value: entry.value });
         }
     }
+    
     static getCacheEntries() {
-        return internalCache.entries();
-    }
+    return internalCache.entries();
+   }
+
     static getCacheEntry(key) {
-        return internalCache.get(key);
-    }
+    return internalCache.get(key);
+  }
+  
     static wipeCaches() { internalCache.clear(); }
     static getCacheSize() { return internalCache.size; }
 }
